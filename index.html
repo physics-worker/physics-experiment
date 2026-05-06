@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<title>螺旋测微计完整数据处理</title>
+<style>
+  body { font-family: Arial; padding: 30px; }
+  table { border-collapse: collapse; margin-bottom: 20px; }
+  td, th { border: 1px solid #ccc; padding: 10px; text-align: center; }
+  input { width: 90px; text-align: center; }
+  .result { font-weight: bold; color: #d14; font-size: 18px; }
+</style>
+</head>
+<body>
+
+<h2>螺旋测微计测量钢珠直径（完整版）</h2>
+
+<h3>一、测量数据</h3>
+<table>
+  <tr>
+    <th>第1次</th>
+    <th>第2次</th>
+    <th>第3次</th>
+    <th>第4次</th>
+    <th>第5次</th>
+    <th>第6次</th>
+  </tr>
+  <tr>
+    <td><input type="number" step="any" id="d1"></td>
+    <td><input type="number" step="any" id="d2"></td>
+    <td><input type="number" step="any" id="d3"></td>
+    <td><input type="number" step="any" id="d4"></td>
+    <td><input type="number" step="any" id="d5"></td>
+    <td><input type="number" step="any" id="d6"></td>
+  </tr>
+</table>
+
+<h3>二、仪器误差输入</h3>
+<p>仪器误差 Δ（mm）：<input type="number" step="any" id="instrument"></p>
+
+<button onclick="calculate()">一键计算</button>
+
+<h3>三、计算结果</h3>
+<p>平均值 x̄：<span id="mean" class="result">-</span> mm</p>
+<p>A类不确定度 uA：<span id="ua" class="result">-</span> mm</p>
+<p>B类不确定度 uB：<span id="ub" class="result">-</span> mm</p>
+<p>合成不确定度 u：<span id="uc" class="result">-</span> mm</p>
+<p>最终结果：<span id="final" class="result">-</span></p>
+
+<script>
+function calculate() {
+  let data = [];
+  for (let i = 1; i <= 6; i++) {
+    let val = document.getElementById("d" + i).value;
+    if (val !== "") data.push(parseFloat(val));
+  }
+
+  let n = data.length;
+  if (n < 2) {
+    alert("至少输入两组数据");
+    return;
+  }
+
+  // 平均值
+  let mean = data.reduce((a, b) => a + b, 0) / n;
+
+  // 标准偏差 s
+  let variance = data.reduce((sum, x) => sum + Math.pow(x - mean, 2), 0) / (n - 1);
+  let s = Math.sqrt(variance);
+
+  // A类不确定度 s/√n
+  let ua = s / Math.sqrt(n);
+
+  // B类不确定度 Δ/√3
+  let instrument = parseFloat(document.getElementById("instrument").value);
+  let ub = 0;
+  if (!isNaN(instrument)) {
+    ub = instrument / Math.sqrt(3);
+  }
+
+  // 合成不确定度
+  let uc = Math.sqrt(ua * ua + ub * ub);
+
+  // 显示
+  document.getElementById("mean").innerText = mean.toFixed(5);
+  document.getElementById("ua").innerText = ua.toFixed(5);
+  document.getElementById("ub").innerText = ub.toFixed(5);
+  document.getElementById("uc").innerText = uc.toFixed(5);
+
+  document.getElementById("final").innerText = 
+    `(${mean.toFixed(5)} ± ${uc.toFixed(5)}) mm`;
+}
+</script>
+
+</body>
+</html>
