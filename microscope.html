@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<title>读数显微镜测毛细管外径</title>
+<style>
+  body { font-family: Arial; padding: 30px; line-height: 1.7; }
+  table { border-collapse: collapse; margin-bottom: 20px; }
+  td, th { border: 1px solid #ccc; padding: 10px; text-align: center; }
+  input { width: 90px; text-align: center; }
+  .result { font-weight: bold; color: #d14; }
+  .block { background:#f6f6f6; padding:10px; border-left:4px solid #999; margin:10px 0; }
+</style>
+</head>
+<body>
+
+<h1>读数显微镜测毛细管外径（直接测量）</h1>
+
+<h2>一、原始数据（单位：mm）</h2>
+<table>
+  <tr><th></th><th>1</th><th>2</th><th>3</th><th>4</th><th>5</th><th>6</th></tr>
+  <tr>
+    <th>l₁</th>
+    <td><input id="l1_1"></td>
+    <td><input id="l1_2"></td>
+    <td><input id="l1_3"></td>
+    <td><input id="l1_4"></td>
+    <td><input id="l1_5"></td>
+    <td><input id="l1_6"></td>
+  </tr>
+  <tr>
+    <th>l₂</th>
+    <td><input id="l2_1"></td>
+    <td><input id="l2_2"></td>
+    <td><input id="l2_3"></td>
+    <td><input id="l2_4"></td>
+    <td><input id="l2_5"></td>
+    <td><input id="l2_6"></td>
+  </tr>
+</table>
+
+<h2>二、仪器误差 Δ（mm）</h2>
+<p>Δ：<input id="inst"></p>
+
+<button onclick="calculate()">一键计算</button>
+
+<h2>三、计算说明</h2>
+<div class="block">
+每次外径 dᵢ = |l₁ᵢ - l₂ᵢ|
+<br>平均值 x̄ = average(dᵢ)
+<br>标准偏差 s = √[Σ(dᵢ - x̄)² / (n-1)]
+<br>A类不确定度 uA = s / √n
+<br>B类不确定度 uB = Δ / √3
+<br>合成不确定度 u = √(uA² + uB²)
+</div>
+
+<h2>四、中间结果</h2>
+<p>各次外径 dᵢ：</p>
+<p id="di_list" class="result">-</p>
+
+<p>平均外径 x̄：<span id="mean" class="result">-</span> mm</p>
+<p>标准偏差 s：<span id="std" class="result">-</span> mm</p>
+<p>A类不确定度 uA：<span id="ua" class="result">-</span> mm</p>
+<p>B类不确定度 uB：<span id="ub" class="result">-</span> mm</p>
+<p>合成不确定度 u：<span id="uc" class="result">-</span> mm</p>
+
+<h2>五、最终结果</h2>
+<p class="result" id="final">-</p>
+
+<script>
+function mean(arr){return arr.reduce((a,b)=>a+b,0)/arr.length}
+function std(arr){
+  let m = mean(arr);
+  return Math.sqrt(arr.reduce((s,x)=>s+(x-m)**2,0)/(arr.length-1));
+}
+
+function calculate(){
+  let d = [];
+
+  for(let i=1;i<=6;i++){
+    let l1 = parseFloat(document.getElementById('l1_'+i).value);
+    let l2 = parseFloat(document.getElementById('l2_'+i).value);
+
+    if(!isNaN(l1) && !isNaN(l2)){
+      d.push(Math.abs(l1 - l2));
+    }
+  }
+
+  if(d.length < 2){
+    alert('至少输入两组有效数据');
+    return;
+  }
+
+  let n = d.length;
+  let m = mean(d);
+  let s = std(d);
+  let ua = s / Math.sqrt(n);
+
+  let inst = parseFloat(document.getElementById('inst').value) || 0;
+  let ub = inst / Math.sqrt(3);
+
+  let uc = Math.sqrt(ua*ua + ub*ub);
+
+  // 输出
+  document.getElementById('di_list').innerText = d.map(x=>x.toFixed(5)).join(' , ');
+  document.getElementById('mean').innerText = m.toFixed(5);
+  document.getElementById('std').innerText = s.toFixed(5);
+  document.getElementById('ua').innerText = ua.toFixed(5);
+  document.getElementById('ub').innerText = ub.toFixed(5);
+  document.getElementById('uc').innerText = uc.toFixed(5);
+
+  document.getElementById('final').innerText = `d = (${m.toFixed(5)} ± ${uc.toFixed(5)}) mm`;
+}
+</script>
+
+</body>
+</html>
