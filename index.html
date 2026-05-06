@@ -94,3 +94,142 @@ function calculate() {
 
 </body>
 </html>
+<html lang="zh"><head>
+<meta charset="UTF-8">
+<title>游标卡尺测圆柱筒体积</title>
+<style>
+  body { font-family: Arial; padding: 30px; line-height:1.8 }
+  table { border-collapse: collapse; margin-bottom: 20px; }
+  td, th { border: 1px solid #ccc; padding: 10px; text-align: center; }
+  input { width: 80px; text-align: center; }
+  .result { font-weight: bold; color: #d14; }
+  .formula { background:#f6f6f6; padding:10px; margin:10px 0; border-left:4px solid #999 }
+</style>
+</head>
+<body>
+
+<h1>游标卡尺测圆柱筒体积（间接测量）</h1>
+
+<h2>一、原始测量数据</h2>
+<table>
+<tbody><tr><th></th><th>1</th><th>2</th><th>3</th><th>4</th><th>5</th><th>6</th></tr>
+<tr><th>高度 h (mm)</th>
+<td><input id="h1"></td><td><input id="h2"></td><td><input id="h3"></td><td><input id="h4"></td><td><input id="h5"></td><td><input id="h6"></td>
+</tr>
+<tr><th>外径 D (mm)</th>
+<td><input id="dO1"></td><td><input id="dO2"></td><td><input id="dO3"></td><td><input id="dO4"></td><td><input id="dO5"></td><td><input id="dO6"></td>
+</tr>
+<tr><th>内径 d (mm)</th>
+<td><input id="dI1"></td><td><input id="dI2"></td><td><input id="dI3"></td><td><input id="dI4"></td><td><input id="dI5"></td><td><input id="dI6"></td>
+</tr>
+</tbody></table>
+
+<h2>二、仪器误差（Δ）</h2>
+<p>h：<input id="inst_h"> mm</p>
+<p>D：<input id="inst_D"> mm</p>
+<p>d：<input id="inst_d"> mm</p>
+
+<button onclick="calculate()">一键计算</button>
+
+<h2>三、不确定度计算公式</h2>
+<div class="formula">
+标准偏差：s = √[Σ(xᵢ - x̄)² / (n - 1)]
+<br>A类不确定度：uA = s / √n
+<br>B类不确定度：uB = Δ / √3
+<br>合成不确定度：u = √(uA² + uB²)
+</div>
+
+<h2>四、直接测量量不确定度</h2>
+<p>h：uA=<span id="ua_h" class="result">-</span>，uB=<span id="ub_h" class="result">-</span>，u=<span id="u_h" class="result">-</span></p>
+<p>D：uA=<span id="ua_D" class="result">-</span>，uB=<span id="ub_D" class="result">-</span>，u=<span id="u_D" class="result">-</span></p>
+<p>d：uA=<span id="ua_d" class="result">-</span>，uB=<span id="ub_d" class="result">-</span>，u=<span id="u_d" class="result">-</span></p>
+
+<h2>五、误差传递公式</h2>
+<div class="formula">
+V = π/4 · h · (D² - d²)
+<br>
+u(V)/V = √[(u(h)/h)² + (2D·u(D)/(D²-d²))² + (2d·u(d)/(D²-d²))²]
+</div>
+
+<h2>六、计算结果</h2>
+<p>h̄：<span id="mh" class="result">-</span></p>
+<p>D̄：<span id="mD" class="result">-</span></p>
+<p>d̄：<span id="md" class="result">-</span></p>
+
+<p>体积 V：<span id="V_res" class="result">-</span> mm³</p>
+<p>体积相对不确定度 u(V)/V：<span id="rel" class="result">-</span></p>
+<p>体积不确定度 u(V)：<span id="uV_res" class="result">-</span> mm³</p>
+<p>最终结果：<span id="final" class="result">-</span></p>
+
+<script>
+function mean(arr){return arr.reduce((a,b)=>a+b,0)/arr.length}
+function std(arr){let m=mean(arr);return Math.sqrt(arr.reduce((s,x)=>s+(x-m)**2,0)/(arr.length-1))}
+
+function getData(prefix){
+  let arr=[];
+  for(let i=1;i<=6;i++){
+    let el=document.getElementById(prefix+i);
+    if(el && el.value!=="") arr.push(parseFloat(el.value));
+  }
+  return arr;
+}
+
+function calculate(){
+  let h=getData('h');
+  let D=getData('dO');
+  let d=getData('dI');
+
+  if(h.length<2||D.length<2||d.length<2){
+    alert('每一组数据至少输入两个值');
+    return;
+  }
+
+  let mh_val=mean(h), mD_val=mean(D), md_val=mean(d);
+
+  let ua_h=std(h)/Math.sqrt(h.length);
+  let ua_D=std(D)/Math.sqrt(D.length);
+  let ua_d=std(d)/Math.sqrt(d.length);
+
+  let ub_h=(parseFloat(document.getElementById('inst_h').value)||0)/Math.sqrt(3);
+  let ub_D=(parseFloat(document.getElementById('inst_D').value)||0)/Math.sqrt(3);
+  let ub_d=(parseFloat(document.getElementById('inst_d').value)||0)/Math.sqrt(3);
+
+  let uh=Math.sqrt(ua_h**2+ub_h**2);
+  let uD=Math.sqrt(ua_D**2+ub_D**2);
+  let ud=Math.sqrt(ua_d**2+ub_d**2);
+
+  let V=0.25*Math.PI*mh_val*(mD_val*mD_val-md_val*md_val);
+
+  let uV=Math.sqrt(
+    (uh/mh_val)**2 +
+    (2*mD_val*uD/(mD_val*mD_val-md_val*md_val))**2 +
+    (2*md_val*ud/(mD_val*mD_val-md_val*md_val))**2
+  )*V;
+
+  document.getElementById('ua_h').innerText=ua_h.toFixed(5);
+  document.getElementById('ub_h').innerText=ub_h.toFixed(5);
+  document.getElementById('u_h').innerText=uh.toFixed(5);
+
+  document.getElementById('ua_D').innerText=ua_D.toFixed(5);
+  document.getElementById('ub_D').innerText=ub_D.toFixed(5);
+  document.getElementById('u_D').innerText=uD.toFixed(5);
+
+  document.getElementById('ua_d').innerText=ua_d.toFixed(5);
+  document.getElementById('ub_d').innerText=ub_d.toFixed(5);
+  document.getElementById('u_d').innerText=ud.toFixed(5);
+
+  document.getElementById('mh').innerText=mh_val.toFixed(5);
+  document.getElementById('mD').innerText=mD_val.toFixed(5);
+  document.getElementById('md').innerText=md_val.toFixed(5);
+
+  document.getElementById('V_res').innerText=V.toFixed(5);
+  document.getElementById('uV_res').innerText=uV.toFixed(5);
+  let rel = uV / V;
+  document.getElementById('rel').innerText = rel.toExponential(3);
+  document.getElementById('final').innerText=`(${V.toFixed(5)} ± ${uV.toFixed(5)}) mm³`;
+}
+</script>
+
+
+
+</body></html>
